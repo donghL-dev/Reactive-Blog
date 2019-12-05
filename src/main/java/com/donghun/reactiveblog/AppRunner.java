@@ -1,6 +1,7 @@
 package com.donghun.reactiveblog;
 
 import com.donghun.reactiveblog.domain.User;
+import com.donghun.reactiveblog.repository.TokenRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -18,8 +19,11 @@ public class AppRunner implements CommandLineRunner {
 
     private final UserRepository userRepository;
 
-    public AppRunner(UserRepository userRepository) {
+    private final TokenRepository tokenRepository;
+
+    public AppRunner(UserRepository userRepository, TokenRepository tokenRepository) {
         this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
     }
 
     @Override
@@ -37,5 +41,7 @@ public class AppRunner implements CommandLineRunner {
                         .build()
                 ).flatMap(userRepository::save)
         ).subscribe();
+
+        tokenRepository.deleteAll().subscribe();
     }
 }

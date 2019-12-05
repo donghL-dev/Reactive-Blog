@@ -1,5 +1,6 @@
-package com.donghun.reactiveblog.domain;
+package com.donghun.reactiveblog.domain.vo;
 
+import com.donghun.reactiveblog.domain.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,15 +9,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
-/**
- * @author donghL-dev
- * @since  2019-12-01
- */
-public class UserTest {
+class UserVOTest {
 
     @Test
-    @DisplayName("User 객체 생성 테스트.")
-    public void userCreateTest() {
+    @DisplayName("UserVO 객체 생성 테스트")
+    public void userVoCreateTest() {
 
         // given
         String id = UUID.randomUUID().toString();
@@ -36,13 +33,11 @@ public class UserTest {
                 .createdAt(createdAt)
                 .build();
 
+        // when
+        UserVO userVO = new UserVO(user);
+
         // then
-        then(user).isNotNull();
-        then(user.getId()).isEqualTo(id);
-        then(user.getUsername()).isEqualTo(username);
-        then(user.getEmail()).isEqualTo(email);
-        then(user.getPassword()).isEqualTo(password);
-        then(user.getBio()).isEqualTo(bio);
-        then(user.getCreatedAt()).isEqualTo(createdAt);
+        then(userVO).isNotNull();
+        then(userVO.getUser()).isEqualTo(user);
     }
 }
