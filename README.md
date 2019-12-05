@@ -85,6 +85,7 @@ Project - Reactive Blog
 * 추후 추가 예정
 
 ## Dependencies
+<details><summary>세부정보</summary>
 
 * `Spring Reactive Web`
 
@@ -95,6 +96,8 @@ Project - Reactive Blog
 * `Spring Security`
 
 * `Lombok`
+
+</details>
 
 ## 도메인 명세
 

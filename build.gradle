@@ -19,10 +19,20 @@ repositories {
 	mavenCentral()
 }
 
+tasks.withType(Test) {
+	scanForTestClasses = false
+	include "**/*Test.class" // whatever Ant pattern matches your test class files
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'com.auth0:java-jwt:3.8.2'
+	implementation 'io.jsonwebtoken:jjwt:0.9.0'
+	// JAX-B dependencies for JDK 9+
+	implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+	implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
 	compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.10'
 	annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.10'
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
