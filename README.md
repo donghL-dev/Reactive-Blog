@@ -108,7 +108,7 @@ Project - Reactive Blog
 
 * 모든 `API`에 대한 반환은 `Content-Type: application/json; charset=utf-8`를 기본으로 합니다.
 
-* 인증(`auth`)은 `HTTP` 헤더를 사용해서 진행됩니다.<br><br>
+* 인증(`auth`)은 `HTTP` 헤더를 사용해서 진행됩니다.<br>
 
     | Key | Value |
     |:---:|:---:|
@@ -310,7 +310,7 @@ Project - Reactive Blog
     | `Authentication` | `POST` | `/api/users/login` | `{ "user":{ "email": "demo@demo.com", "password": "X12345678" } }` | `User` | `No`
     | `Authentication expiration` | `POST` | `/api/users/logout` |  | `Default Success Code` | `YES`
     | `Current User` | `GET` | `/api/user` |  | `Current User` | `YES`
-    | `Update User` | `PUT` | `/api/user` | `{ "user":{ "email": "me@sangkon.com", "bio": "Java developer", "image": "https://images.unsplash.com/photo-1517917901756-d03bae98b33f" } }` | `User` | `YES`
+    | `Update User` | `PUT` | `/api/user` | `{ "user":{ "email": "me@sangkon.com", "bio": "Java developer", "image": "image URL" } }` | `User` | `YES`
     | `Get Profile` | `GET` | `/api/profiles/:username` |  | `Profile` | `NO`
     | `Fallow User` | `POST` | `/api/profiles/:username/follow` |  | `Profile` | `YES`
     | `Unfallow User` | `DELETE` | `/api/profiles/:username/follow` |  | `Profile` | `YES`
