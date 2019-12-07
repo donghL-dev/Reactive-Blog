@@ -5,9 +5,7 @@ import com.donghun.reactiveblog.config.auth.SecurityConstants;
 import com.donghun.reactiveblog.domain.Token;
 import com.donghun.reactiveblog.domain.User;
 import com.donghun.reactiveblog.domain.dto.SignUpDTO;
-import com.donghun.reactiveblog.domain.vo.LoginVO;
-import com.donghun.reactiveblog.domain.vo.SignUpVO;
-import com.donghun.reactiveblog.domain.vo.UserVO;
+import com.donghun.reactiveblog.domain.vo.*;
 import com.donghun.reactiveblog.repository.TokenRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
 
@@ -95,15 +93,16 @@ public class UserService {
                                 return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                                         .body(Mono.just(new UserVO(user)), UserVO.class);
                             } else {
-                                return ServerResponse.status(HttpStatus.UNAUTHORIZED).body(Mono.just("Invalid credentials"), String.class);
+                                return ServerResponse.badRequest().body(Mono.just("Invalid credentials"), String.class);
                             }
-                        }).switchIfEmpty(ServerResponse.status(HttpStatus.UNAUTHORIZED).body(Mono.just("User does not exist"), String.class)));
+                        }).switchIfEmpty(ServerResponse.badRequest().body(Mono.just("User does not exist"), String.class)));
     }
 
     public Mono<ServerResponse> logoutProcessLogic(ServerRequest request) {
         JwtResolver jwtResolver = new JwtResolver(request, secret);
         tokenRepository.findByEmail(jwtResolver.getUserByToken()).map(Token::getId).flatMap(tokenRepository::deleteById).subscribe();
-        return ServerResponse.ok().body(Mono.just("Success Logout"), String.class);
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class);
     }
 
     public void generateToken(User user) {
@@ -118,7 +117,7 @@ public class UserService {
                 .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
                 .setIssuer(SecurityConstants.TOKEN_ISSUER)
                 .setAudience(SecurityConstants.TOKEN_AUDIENCE)
-                .setSubject("Perfect-Matching JWT Token")
+                .setSubject("Reactive-Blog JWT Token")
                 .claim("idx", user.getId())
                 .claim("email", user.getEmail())
                 .claim("userName", user.getUsername())
