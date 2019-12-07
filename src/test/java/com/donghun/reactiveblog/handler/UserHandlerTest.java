@@ -11,13 +11,14 @@ import com.donghun.reactiveblog.repository.TokenRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,10 +37,14 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
+/**
+ * @author donghL-dev
+ * @since  2019-12-05
+ */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-class UserHandlerTest {
+public class UserHandlerTest {
 
     @Value("${springbootwebfluxjjwt.jjwt.secret}")
     private String secret;
@@ -55,6 +60,12 @@ class UserHandlerTest {
 
     @Autowired
     private TokenRepository tokenRepository;
+
+    @BeforeEach
+    public void init() {
+        userRepository.deleteAll();
+        tokenRepository.deleteAll();
+    }
 
     @Test
     @DisplayName("회원 가입 API 테스트")
@@ -77,7 +88,10 @@ class UserHandlerTest {
         Mono<User> userMono = userRepository.findByEmail(signUpDTO.getEmail());
 
         StepVerifier.create(userMono)
-                .assertNext(i -> then(i).isNotNull())
+                .assertNext(i -> {
+                    then(i.getUsername()).isEqualTo("test_user");
+                    then(i.getEmail()).isEqualTo("test_user@email.com");
+                })
                 .verifyComplete();
     }
 
@@ -86,8 +100,8 @@ class UserHandlerTest {
     public void loginRouteTest() {
         User user = User.builder()
                     .id(UUID.randomUUID().toString())
-                    .username("test_user")
-                    .email("testUser@email.com")
+                    .username("test_user22")
+                    .email("test_user22@email.com")
                     .password(passwordEncoder.encode("testPassword1234"))
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
@@ -95,7 +109,7 @@ class UserHandlerTest {
 
         Mono.just(user).flatMap(userRepository::save).subscribe();
 
-        LoginDTO loginDTO = LoginDTO.builder().email(user.getEmail()).password("testPassword1234").build();
+        LoginDTO loginDTO = LoginDTO.builder().email("test_user22@email.com").password("testPassword1234").build();
         LoginVO loginVO = new LoginVO();
         loginVO.setUser(loginDTO);
 
@@ -112,8 +126,8 @@ class UserHandlerTest {
     public void logoutRouteTest() {
         User user = User.builder()
                 .id(UUID.randomUUID().toString())
-                .username("test_user")
-                .email("testUser@email.com")
+                .username("test_user33")
+                .email("testUser33@email.com")
                 .password(passwordEncoder.encode("testPassword1234"))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -126,19 +140,17 @@ class UserHandlerTest {
 
         webTestClient.post()
                 .uri("/api/users/logout")
-                .header("Authorization", token)
+                .header(HttpHeaders.AUTHORIZATION, token)
                 .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectStatus()
                 .isOk();
 
         Mono<Token> tokenMono = tokenRepository.findByEmail(user.getEmail())
-                .switchIfEmpty(Mono.just(Token.builder().email("a").token("b").build()));
+                .defaultIfEmpty(Token.builder().id("A").build());
 
         StepVerifier.create(tokenMono)
-                .assertNext(i -> {
-                    then(i.getEmail()).isEqualTo("a");
-                    then(i.getToken()).isEqualTo("b");
-                })
+                .assertNext(i -> then(i.getId()).isEqualTo("A"))
                 .verifyComplete();
     }
 
@@ -153,7 +165,7 @@ class UserHandlerTest {
                 .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
                 .setIssuer(SecurityConstants.TOKEN_ISSUER)
                 .setAudience(SecurityConstants.TOKEN_AUDIENCE)
-                .setSubject("Perfect-Matching JWT Token")
+                .setSubject("Reactive-Blog JWT Token")
                 .claim("idx", user.getId())
                 .claim("email", user.getEmail())
                 .claim("userName", user.getUsername())

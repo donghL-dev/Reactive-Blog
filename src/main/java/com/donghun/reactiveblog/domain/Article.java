@@ -36,6 +36,6 @@ public class Article {
 
     private String author;
 
-    private Set<String> tags = new HashSet<>();
+    private Set<String> tags;
 
 }

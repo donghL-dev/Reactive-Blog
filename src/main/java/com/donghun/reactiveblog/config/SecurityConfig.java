@@ -51,7 +51,7 @@ public class SecurityConfig {
                     }))
                 .and()
                     .authorizeExchange()
-                        .pathMatchers(HttpMethod.POST, "/api/users/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/users", "/api/users/login").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/profiles/**", "/api/articles",
                                 "/api/articles/{slug}/comments", "/api/tags").permitAll()
                         .anyExchange().authenticated()

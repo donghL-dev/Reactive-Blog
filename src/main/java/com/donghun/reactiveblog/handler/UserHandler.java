@@ -27,5 +27,7 @@ public class UserHandler {
         return userService.loginProcessLogic(request);
     }
 
-    public Mono<ServerResponse> logout(ServerRequest request) { return  userService.logoutProcessLogic(request); }
+    public Mono<ServerResponse> logout(ServerRequest request) {
+        return  userService.logoutProcessLogic(request);
+    }
 }
