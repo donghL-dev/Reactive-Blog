@@ -25,6 +25,9 @@ public class ServerRouter {
         return RouterFunctions.nest(path("/api/users"),
                 route(POST("/").and(contentType(MediaType.APPLICATION_JSON)), userHandler::signUp)
                 .andRoute(POST("/login").and(contentType(MediaType.APPLICATION_JSON)), userHandler::login)
-                .andRoute(POST("/logout"), userHandler::logout));
+                .andRoute(POST("/logout"), userHandler::logout))
+                .andNest(path("/api/user"),
+                        route(GET("/"), userHandler::currentUser)
+                        .andRoute(PUT("/").and(contentType(MediaType.APPLICATION_JSON)), userHandler::updateUser));
     }
 }

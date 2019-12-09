@@ -5,6 +5,8 @@ import com.donghun.reactiveblog.domain.Token;
 import com.donghun.reactiveblog.domain.User;
 import com.donghun.reactiveblog.domain.dto.LoginDTO;
 import com.donghun.reactiveblog.domain.dto.SignUpDTO;
+import com.donghun.reactiveblog.domain.dto.UserDTO;
+import com.donghun.reactiveblog.domain.vo.CurrentUserVO;
 import com.donghun.reactiveblog.domain.vo.LoginVO;
 import com.donghun.reactiveblog.domain.vo.SignUpVO;
 import com.donghun.reactiveblog.repository.TokenRepository;
@@ -19,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -41,16 +44,7 @@ import static org.assertj.core.api.BDDAssertions.then;
  * @author donghL-dev
  * @since  2019-12-05
  */
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-public class UserHandlerTest {
-
-    @Value("${springbootwebfluxjjwt.jjwt.secret}")
-    private String secret;
-
-    @Autowired
-    private WebTestClient webTestClient;
+public class UserHandlerTest extends BaseHandlerTest {
 
     @Autowired
     private UserRepository userRepository;
@@ -146,33 +140,84 @@ public class UserHandlerTest {
                 .expectStatus()
                 .isOk();
 
-        Mono<Token> tokenMono = tokenRepository.findByEmail(user.getEmail())
-                .defaultIfEmpty(Token.builder().id("A").build());
-
-        StepVerifier.create(tokenMono)
-                .assertNext(i -> then(i.getId()).isEqualTo("A"))
-                .verifyComplete();
     }
 
-    public String generateToken(User user) {
-        List<String> roles = Stream.of(new SimpleGrantedAuthority("USER")).map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+    @Test
+    @DisplayName("현재 유저 정보를 가져오는 API 테스트")
+    public void currentUserRouteTest() {
+        User user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .username("test_user44")
+                .email("test_user44@email.com")
+                .password(passwordEncoder.encode("testPassword123445"))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
 
-        byte[] signingKey = secret.getBytes();
+        Mono.just(user).flatMap(userRepository::save).subscribe();
 
-        return Jwts.builder()
-                .signWith(SignatureAlgorithm.HS512, signingKey)
-                .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
-                .setIssuer(SecurityConstants.TOKEN_ISSUER)
-                .setAudience(SecurityConstants.TOKEN_AUDIENCE)
-                .setSubject("Reactive-Blog JWT Token")
-                .claim("idx", user.getId())
-                .claim("email", user.getEmail())
-                .claim("userName", user.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 100000000))
-                .claim("role", roles)
-                .compact();
+        String token = generateToken(user);
+        Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
+                .flatMap(tokenRepository::save).subscribe();
+
+        webTestClient.get()
+                .uri("/api/user")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isOk();
+    }
+
+    @Test
+    @DisplayName("유저 정보를 업데이트 하는 API 테스트")
+    public void updateUserRouteTest() {
+        User user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .username("test_user55")
+                .email("test_user55@email.com")
+                .password(passwordEncoder.encode("testPassword1234"))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .bio("")
+                .token("")
+                .image("")
+                .build();
+
+        Mono.just(user).flatMap(userRepository::save).subscribe();
+
+        String token = generateToken(user);
+        Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
+                .flatMap(tokenRepository::save).subscribe();
+
+        UserDTO userDTO = UserDTO.builder()
+                        .bio("이런 사람입니다.")
+                        .email("me@donghun.dev")
+                        .image("https://image.com")
+                        .build();
+
+        CurrentUserVO currentUserVO = new CurrentUserVO();
+        currentUserVO.setUser(userDTO);
+
+        webTestClient.put()
+                .uri("/api/user")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(currentUserVO), CurrentUserVO.class)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isOk();
+
+        Mono<User> userMono = userRepository.findById(user.getId());
+
+        StepVerifier.create(userMono)
+                .assertNext(i -> {
+                    then(i.getBio()).isEqualTo(userDTO.getBio());
+                    then(i.getEmail()).isEqualTo(userDTO.getEmail());
+                    then(i.getImage()).isEqualTo(userDTO.getImage());
+                })
+                .verifyComplete();
     }
 
 }

@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
+/**
+ * @author donghL-dev
+ * @since  2019-12-06
+ */
 class StatusVOTest {
 
     @Test
