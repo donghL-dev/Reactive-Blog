@@ -20,5 +20,5 @@ public class Fallow {
 
     private String fallow;
 
-    private String fallower;
+    private String fallowing;
 }

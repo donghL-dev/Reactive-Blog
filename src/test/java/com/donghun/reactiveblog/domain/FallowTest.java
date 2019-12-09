@@ -19,18 +19,18 @@ public class FallowTest {
 
         // given
         String fallow = "Test_USER_A";
-        String fallower = "TEST_USER_B";
+        String fallowing = "TEST_USER_B";
 
         // when
         Fallow fallow1 = Fallow.builder()
                     .id(UUID.randomUUID().toString())
                     .fallow(fallow)
-                    .fallower(fallower)
+                    .fallowing(fallowing)
                     .build();
 
         // then
         then(fallow1).isNotNull();
         then(fallow1.getFallow()).isEqualTo(fallow);
-        then(fallow1.getFallower()).isEqualTo(fallower);
+        then(fallow1.getFallowing()).isEqualTo(fallowing);
     }
 }
