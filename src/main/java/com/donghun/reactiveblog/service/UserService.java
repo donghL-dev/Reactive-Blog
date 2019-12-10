@@ -45,6 +45,8 @@ public class UserService {
 
     private final Validator validator;
 
+    private final JwtResolver jwtResolver;
+
     @Value("${springbootwebfluxjjwt.jjwt.secret}")
     private String secret;
 
@@ -56,20 +58,25 @@ public class UserService {
                 .map(SignUpVO::getUser)
                 .flatMap(user -> {
                     if(validator.validate(user).isEmpty()) {
-                        return userRepository.findByEmail(user.getEmail())
-                                .flatMap(dbUser -> ServerResponse.badRequest().body(Mono.just("User already exist"), String.class))
-                                .switchIfEmpty(userRepository.save(User.builder()
-                                        .id(UUID.randomUUID().toString())
-                                        .username(user.getUsername())
-                                        .email(user.getEmail())
-                                        .password(passwordEncoder.encode(user.getPassword()))
-                                        .bio("")
-                                        .image("")
-                                        .token("")
-                                        .createdAt(LocalDateTime.now())
-                                        .updatedAt(LocalDateTime.now()).build())
-                                        .flatMap(savedUser -> ServerResponse.created(URI.create("/aoi/users"))
-                                                .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new UserVO(savedUser)), UserVO.class)));
+                        return userRepository.findByUsername(user.getUsername())
+                                .flatMap(u -> ServerResponse.badRequest().body(Mono.just(
+                                        new ErrorStatusVO(Collections.singletonList("Username already exist")).getErrors()), Map.class))
+                                .switchIfEmpty(userRepository.findByEmail(user.getEmail())
+                                        .flatMap(dbUser -> ServerResponse.badRequest().body(Mono.just(
+                                                new ErrorStatusVO(Collections.singletonList("Email already exist")).getErrors()), Map.class))
+                                        .switchIfEmpty(userRepository.save(User.builder()
+                                                .id(UUID.randomUUID().toString())
+                                                .username(user.getUsername())
+                                                .email(user.getEmail())
+                                                .password(passwordEncoder.encode(user.getPassword()))
+                                                .bio("")
+                                                .image("")
+                                                .token("")
+                                                .createdAt(LocalDateTime.now())
+                                                .updatedAt(LocalDateTime.now()).build())
+                                                .flatMap(savedUser -> ServerResponse.created(URI.create("/aoi/users"))
+                                                        .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new UserVO(savedUser)), UserVO.class))));
+
                     } else {
                         return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                                 Mono.just(new ErrorStatusVO(validation(user)).getErrors()), Map.class);
@@ -95,15 +102,13 @@ public class UserService {
     }
 
     public Mono<ServerResponse> logoutProcessLogic(ServerRequest request) {
-        JwtResolver jwtResolver = new JwtResolver(request, secret);
-        tokenRepository.findByEmail(jwtResolver.getUserByToken()).map(Token::getId).flatMap(tokenRepository::deleteById).subscribe();
+        tokenRepository.findByEmail(jwtResolver.getUserByToken(request)).map(Token::getId).flatMap(tokenRepository::deleteById).subscribe();
         return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class);
     }
 
     public Mono<ServerResponse> getCurrentUserProcessLogic(ServerRequest request) {
-        JwtResolver jwtResolver = new JwtResolver(request, secret);
-        return userRepository.findByEmail(jwtResolver.getUserByToken())
+        return userRepository.findByEmail(jwtResolver.getUserByToken(request))
                 .flatMap(user -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new  UserVO(user)), UserVO.class))
                 .switchIfEmpty(ServerResponse.badRequest().body(
@@ -111,12 +116,11 @@ public class UserService {
     }
 
     public Mono<ServerResponse> updateUserProcessLogic(ServerRequest request) {
-        JwtResolver jwtResolver = new JwtResolver(request, secret);
         return request.bodyToMono(CurrentUserVO.class)
                 .map(CurrentUserVO::getUser)
                 .flatMap(userDTO -> {
                     if (validator.validate(userDTO).isEmpty()) {
-                        return userRepository.findByEmail(jwtResolver.getUserByToken())
+                        return userRepository.findByEmail(jwtResolver.getUserByToken(request))
                                 .flatMap(user -> userRepository.save(User.builder()
                                     .id(userDTO.getId() == null ? user.getId() : userDTO.getId())
                                     .username(userDTO.getUsername() == null ? user.getUsername() : userDTO.getUsername())

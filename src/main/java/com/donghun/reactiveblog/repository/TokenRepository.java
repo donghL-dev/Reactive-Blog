@@ -10,4 +10,5 @@ import reactor.core.publisher.Mono;
  */
 public interface TokenRepository extends ReactiveMongoRepository<Token, String> {
     Mono<Token> findByEmail(String email);
+    Mono<Token> findByToken(String token);
 }

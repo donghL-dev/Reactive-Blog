@@ -47,7 +47,7 @@ public class SecurityContextRepository implements ServerSecurityContextRepositor
         String authToken = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authToken != null) {
-           return tokenRepository.findByEmail(parseToken(authToken)).flatMap(i -> authenticationManager.authenticate(
+           return tokenRepository.findByToken(authToken).flatMap(i -> authenticationManager.authenticate(
                    new UsernamePasswordAuthenticationToken(i.getToken(), i.getToken())).map(SecurityContextImpl::new)
            .switchIfEmpty(Mono.empty()));
         } else {
