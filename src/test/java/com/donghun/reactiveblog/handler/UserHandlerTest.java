@@ -128,8 +128,9 @@ public class UserHandlerTest extends BaseHandlerTest {
                 .build();
 
         String token = generateToken(user);
+        String tokenId = UUID.randomUUID().toString();
 
-        Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
+        Mono.just(Token.builder().id(tokenId).email(user.getEmail()).token(token).build())
                 .flatMap(tokenRepository::save).subscribe();
 
         webTestClient.post()
@@ -140,6 +141,12 @@ public class UserHandlerTest extends BaseHandlerTest {
                 .expectStatus()
                 .isOk();
 
+        Mono<Token> tokenMono = tokenRepository.findById(tokenId)
+                .switchIfEmpty(Mono.just(Token.builder().email("test_email").build()));
+
+        StepVerifier.create(tokenMono)
+                .assertNext(i -> then(i.getEmail()).isEqualTo("test_email"))
+                .verifyComplete();
     }
 
     @Test

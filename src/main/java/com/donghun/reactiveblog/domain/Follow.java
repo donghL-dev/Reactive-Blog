@@ -13,12 +13,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 @Document @Builder
-public class Fallow {
+public class Follow {
 
     @Id
     private String id;
 
-    private String fallow;
+    private String follow;
 
-    private String fallowing;
+    private String following;
 }

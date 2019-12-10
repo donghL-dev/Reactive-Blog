@@ -22,15 +22,15 @@ public class FallowTest {
         String fallowing = "TEST_USER_B";
 
         // when
-        Fallow fallow1 = Fallow.builder()
+        Follow fallow1 = Follow.builder()
                     .id(UUID.randomUUID().toString())
-                    .fallow(fallow)
-                    .fallowing(fallowing)
+                    .follow(fallow)
+                    .following(fallowing)
                     .build();
 
         // then
         then(fallow1).isNotNull();
-        then(fallow1.getFallow()).isEqualTo(fallow);
-        then(fallow1.getFallowing()).isEqualTo(fallowing);
+        then(fallow1.getFollow()).isEqualTo(fallow);
+        then(fallow1.getFollowing()).isEqualTo(fallowing);
     }
 }
