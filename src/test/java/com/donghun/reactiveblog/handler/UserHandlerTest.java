@@ -40,8 +40,8 @@ public class UserHandlerTest extends BaseHandlerTest {
 
     @BeforeEach
     public void init() {
-        userRepository.deleteAll();
-        tokenRepository.deleteAll();
+        userRepository.deleteAll().subscribe();
+        tokenRepository.deleteAll().subscribe();
     }
 
     @Test

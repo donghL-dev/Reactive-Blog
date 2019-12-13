@@ -102,9 +102,9 @@ public class UserService {
     }
 
     public Mono<ServerResponse> logoutProcessLogic(ServerRequest request) {
-        tokenRepository.findByEmail(jwtResolver.getUserByToken(request)).map(Token::getId).flatMap(tokenRepository::deleteById).subscribe();
-        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class);
+        return tokenRepository.findByEmail(jwtResolver.getUserByToken(request)).map(Token::getId)
+                .flatMap(tokenRepository::deleteById).then(ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class));
     }
 
     public Mono<ServerResponse> getCurrentUserProcessLogic(ServerRequest request) {

@@ -1,10 +1,8 @@
 package com.donghun.reactiveblog.service;
 
 import com.donghun.reactiveblog.config.auth.JwtResolver;
-import com.donghun.reactiveblog.domain.Article;
 import com.donghun.reactiveblog.domain.Follow;
 import com.donghun.reactiveblog.domain.vo.*;
-import com.donghun.reactiveblog.repository.ArticleRepository;
 import com.donghun.reactiveblog.repository.FollowRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +15,6 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -28,19 +25,17 @@ public class ProfileService {
 
     private final FollowRepository followRepository;
 
-    private final ArticleRepository articleRepository;
-
     private final JwtResolver jwtResolver;
 
     public Mono<ServerResponse> getProfileProcessLogic(ServerRequest request) {
         return userRepository.findByUsername(request.pathVariable("username"))
                 .flatMap(user -> followRepository.findByFollowAndFollowing(user.getEmail(), jwtResolver.getUserByToken(request))
-                            .flatMap(follow -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                        .flatMap(follow -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                                 .body(Mono.just(new ProfileVO(new ProfileBodyVO(user, true))), ProfileVO.class))
-                            .switchIfEmpty(ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                        .switchIfEmpty(ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                                 .body(Mono.just(new ProfileVO(new ProfileBodyVO(user, false))), ProfileVO.class))
-                .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
-                        .body(Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class)));
+                        .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
+                                .body(Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class)));
     }
 
     public Mono<ServerResponse> followUserProcessLogic(ServerRequest request) {
@@ -77,11 +72,8 @@ public class ProfileService {
                                         "You can not un following yourself.")).getErrors()), Map.class);
                     else {
                         return followRepository.findByFollowAndFollowing(user.getEmail(), jwtResolver.getUserByToken(request))
-                                .map(Follow::getId).flatMap(id -> {
-                                    followRepository.deleteById(id).subscribe();
-                                    return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(
-                                            Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class);
-                                })
+                                .flatMap(id -> followRepository.deleteById(id.getId()).then(ServerResponse.ok().contentType(
+                                        MediaType.APPLICATION_JSON).body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class)))
                                 .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
                                         .body(Mono.just(new ErrorStatusVO(
                                                 Collections.singletonList("You are not following this user.")).getErrors()), Map.class));
