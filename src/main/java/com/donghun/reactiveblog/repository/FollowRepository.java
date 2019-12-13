@@ -2,6 +2,7 @@ package com.donghun.reactiveblog.repository;
 
 import com.donghun.reactiveblog.domain.Follow;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -14,5 +15,7 @@ public interface FollowRepository extends ReactiveMongoRepository<Follow, String
     Mono<List<Follow>> findByFollow(String follow);
 
     Mono<Follow> findByFollowAndFollowing(String fallow, String fallowing);
+
+    Flux<Follow> findByFollowing(String following);
 
 }

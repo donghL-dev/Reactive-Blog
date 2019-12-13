@@ -1,8 +1,10 @@
 package com.donghun.reactiveblog.service;
 
 import com.donghun.reactiveblog.config.auth.JwtResolver;
+import com.donghun.reactiveblog.domain.Article;
 import com.donghun.reactiveblog.domain.Follow;
 import com.donghun.reactiveblog.domain.vo.*;
+import com.donghun.reactiveblog.repository.ArticleRepository;
 import com.donghun.reactiveblog.repository.FollowRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +17,8 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,8 @@ public class ProfileService {
     private final UserRepository userRepository;
 
     private final FollowRepository followRepository;
+
+    private final ArticleRepository articleRepository;
 
     private final JwtResolver jwtResolver;
 
@@ -56,11 +60,13 @@ public class ProfileService {
                                         .follow(user.getEmail())
                                         .following(jwtResolver.getUserByToken(request)).build())
                                         .flatMap(savedFallow -> ServerResponse.created(URI.create(request.path())).contentType(MediaType.APPLICATION_JSON)
-                                            .body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class)));
+                                                .body(Mono.just(new SuccessVO(new StatusVO())), SuccessVO.class)));
                     }
                 }).switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
                         .body(Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class));
     }
+
+
 
     public Mono<ServerResponse> unFollowUserProcessLogic(ServerRequest request) {
         return userRepository.findByUsername(request.pathVariable("username"))

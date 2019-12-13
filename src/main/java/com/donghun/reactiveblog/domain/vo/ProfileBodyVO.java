@@ -1,9 +1,8 @@
 package com.donghun.reactiveblog.domain.vo;
 
 import com.donghun.reactiveblog.domain.User;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 
 /**
  * @author donghL-dev
@@ -11,6 +10,9 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProfileBodyVO {
 
     private String image;
@@ -21,10 +23,14 @@ public class ProfileBodyVO {
 
     private Boolean fallowing;
 
+    @JsonIgnore
+    private String email;
+
     public ProfileBodyVO(User user, boolean check) {
         this.image = user.getImage();
         this.bio = user.getBio();
         this.username = user.getUsername();
         this.fallowing = check;
+        this.email = user.getEmail();
     }
 }

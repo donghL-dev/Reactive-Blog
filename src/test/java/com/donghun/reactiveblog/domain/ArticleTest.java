@@ -1,5 +1,6 @@
 package com.donghun.reactiveblog.domain;
 
+import com.donghun.reactiveblog.domain.vo.ProfileBodyVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,10 @@ public class ArticleTest {
         String title = "Hello World";
         String description = "헬로우 월드 게시글입니다.";
         String body = "헬로우 월드는 모든 개발자의 희망입니다.";
-        String author = "Test_User";
+        ProfileBodyVO author = new ProfileBodyVO(User.builder().bio("test_bio")
+                                        .image("test_image")
+                                        .username("test_username")
+                                        .build(), false);
 
         // when
         Article article = Article.builder()
