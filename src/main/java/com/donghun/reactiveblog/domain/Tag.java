@@ -1,5 +1,6 @@
 package com.donghun.reactiveblog.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,6 +17,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Tag {
 
     @Id
+    @JsonIgnore
     private String id;
 
     private String name;

@@ -1,5 +1,6 @@
 package com.donghun.reactiveblog.route;
 
+import com.donghun.reactiveblog.handler.ArticleHandler;
 import com.donghun.reactiveblog.handler.ProfileHandler;
 import com.donghun.reactiveblog.handler.UserHandler;
 import org.springframework.context.annotation.Bean;
@@ -38,5 +39,16 @@ public class ServerRouter {
                 route(GET("/"), profileHandler::getProfile)
                 .andRoute(POST("/follow"), profileHandler::fallowUser)
                 .andRoute(DELETE("/follow"), profileHandler::unFallowUser));
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> articleRoutes(ArticleHandler articleHandler) {
+        return RouterFunctions.nest(path("/api/articles"),
+                route(GET("/"), articleHandler::getArticles)
+                .andRoute(GET("/feed"), articleHandler::getFeedArticles)
+                .andRoute(GET("/{slug}"), articleHandler::getArticle)
+                .andRoute(POST("/").and(contentType(MediaType.APPLICATION_JSON)), articleHandler::postArticle)
+                .andRoute(PUT("/{slug}").and(contentType(MediaType.APPLICATION_JSON)), articleHandler::putArticle)
+                .andRoute(DELETE("/{slug}"), articleHandler::deleteArticle));
     }
 }

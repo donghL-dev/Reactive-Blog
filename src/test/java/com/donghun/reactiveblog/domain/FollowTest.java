@@ -11,7 +11,7 @@ import static org.assertj.core.api.BDDAssertions.then;
  * @author donghL-dev
  * @since  2019-12-02
  */
-public class FallowTest {
+public class FollowTest {
 
     @Test
     @DisplayName("Fallow 객체 생성 테스트")

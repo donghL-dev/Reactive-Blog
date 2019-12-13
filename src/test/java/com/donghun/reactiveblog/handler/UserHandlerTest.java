@@ -1,6 +1,5 @@
 package com.donghun.reactiveblog.handler;
 
-import com.donghun.reactiveblog.config.auth.SecurityConstants;
 import com.donghun.reactiveblog.domain.Token;
 import com.donghun.reactiveblog.domain.User;
 import com.donghun.reactiveblog.domain.dto.LoginDTO;
@@ -11,32 +10,16 @@ import com.donghun.reactiveblog.domain.vo.LoginVO;
 import com.donghun.reactiveblog.domain.vo.SignUpVO;
 import com.donghun.reactiveblog.repository.TokenRepository;
 import com.donghun.reactiveblog.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
