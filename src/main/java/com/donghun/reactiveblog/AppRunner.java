@@ -3,10 +3,7 @@ package com.donghun.reactiveblog;
 import com.donghun.reactiveblog.domain.Article;
 import com.donghun.reactiveblog.domain.User;
 import com.donghun.reactiveblog.domain.vo.ProfileBodyVO;
-import com.donghun.reactiveblog.repository.ArticleRepository;
-import com.donghun.reactiveblog.repository.FollowRepository;
-import com.donghun.reactiveblog.repository.TokenRepository;
-import com.donghun.reactiveblog.repository.UserRepository;
+import com.donghun.reactiveblog.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +33,8 @@ public class AppRunner implements CommandLineRunner {
 
     private final ArticleRepository articleRepository;
 
+    private final CommentRepository commentRepository;
+
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -52,6 +51,7 @@ public class AppRunner implements CommandLineRunner {
 
         tokenRepository.deleteAll().subscribe();
         followRepository.deleteAll().subscribe();
+        commentRepository.deleteAll().subscribe();
     }
 
     public User createUser(int index) {

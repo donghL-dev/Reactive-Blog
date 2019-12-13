@@ -42,8 +42,8 @@ public class ProfileHandlerTest extends BaseHandlerTest {
 
     @BeforeEach
     public void init() {
-        userRepository.deleteAll();
-        tokenRepository.deleteAll();
+        userRepository.deleteAll().subscribe();
+        tokenRepository.deleteAll().subscribe();
     }
 
     @Test
@@ -165,9 +165,9 @@ public class ProfileHandlerTest extends BaseHandlerTest {
                                         .switchIfEmpty(Mono.just(Follow.builder().follow("success_test").build()));
 
         StepVerifier.create(followMono)
-                .assertNext(i -> {
-                    then(i.getFollow()).isEqualTo("success_test");
-                })
+                .assertNext(i ->
+                    then(i.getFollow()).isEqualTo("success_test")
+                )
                 .verifyComplete();
 
     }

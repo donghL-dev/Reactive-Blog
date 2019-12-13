@@ -51,9 +51,9 @@ class ArticleHandlerTest extends BaseHandlerTest {
 
     @BeforeEach
     public void init() {
-        userRepository.deleteAll();
-        tokenRepository.deleteAll();
-        articleRepository.deleteAll();
+        userRepository.deleteAll().subscribe();
+        tokenRepository.deleteAll().subscribe();
+        articleRepository.deleteAll().subscribe();
 
     }
 

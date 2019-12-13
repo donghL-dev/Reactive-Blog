@@ -194,9 +194,8 @@ public class ArticleService {
         return articleRepository.findBySlug(request.pathVariable("slug"))
                 .flatMap(article -> {
                     if(article.getAuthor().getEmail().equals(jwtResolver.getUserByToken(request))) {
-                        articleRepository.delete(article).subscribe();
-                        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Mono
-                                .just(new SuccessVO(new StatusVO())), SuccessVO.class);
+                        return articleRepository.delete(article).then(ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Mono
+                                .just(new SuccessVO(new StatusVO())), SuccessVO.class));
                     } else {
                         return ServerResponse.status(401).contentType(MediaType.APPLICATION_JSON).body(
                                 Mono.just(new ErrorStatusVO(Collections.singletonList("You didn't write this article, " +

@@ -1,5 +1,6 @@
 package com.donghun.reactiveblog.domain;
 
+import com.donghun.reactiveblog.domain.vo.ProfileBodyVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +21,8 @@ public class CommentTest {
 
         // given
         String body = "게시글이 멋집니다.";
-        String author = "Test_USER";
+        ProfileBodyVO author = new ProfileBodyVO(User.builder()
+                .username("test_user").bio("bio").email("email").image("").build(), false);
         String slug = "Hello-World";
 
         // when
