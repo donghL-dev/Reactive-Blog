@@ -19,11 +19,11 @@ Project - Reactive Blog
 
 * 개발과 관련된 모든 이야기는 [Issues](https://github.com/donghL-dev/Reactive-Blog/issues)에서 진행합니다.
 
-* API 및 도메인 명세를 기반으로 개발을 진행하며, 명세에 변경사항이 생길 경우 빠른 시일내에 최신화 합니다.
+* `API` 및 도메인 명세를 기반으로 개발을 진행하며, 명세에 변경사항이 생길 경우 빠른 시일내에 최신화 합니다.
 
-* **Fork**를 통한 PR을 지향합니다.
+* **Fork**를 통한 `PR`을 지향합니다.
 
-* 아래와 같은 Git Workflow를 지향하며 지키려고 노력합니다. ([참고](https://nvie.com/posts/a-successful-git-branching-model/?))
+* 아래와 같은 `Git Workflow`를 지향하며 지키려고 노력합니다. ([참고](https://nvie.com/posts/a-successful-git-branching-model/?))
 
     <img width=750, height=850, src="https://camo.githubusercontent.com/7f2539ff6001fe7700853313e7cdb7fd4602e16a/68747470733a2f2f6e7669652e636f6d2f696d672f6769742d6d6f64656c4032782e706e67">
 
@@ -34,11 +34,11 @@ Project - Reactive Blog
 
 * 준비사항.
 
-    * Gradle or IntelliJ IDEA
+    * `Gradle` or `IntelliJ IDEA`
 
-    * JDK (>= 1.8)
+    * `JDK` (>= 1.8)
 
-    * Spring Boot (>= 2.x)
+    * `Spring Boot` (>= 2.x)
 
 * 저장소를 `clone`
 
@@ -46,9 +46,9 @@ Project - Reactive Blog
     $ git clone https://github.com/donghL-dev/Reactive-Blog.git
     ```
 
-* 데이터 베이스는 MongoDB를 사용해야 합니다.
+* 데이터 베이스는 `MongoDB`를 사용해야 합니다.
 
-* 프로젝트 내 Reactive-Blog\src\main\resources 경로에 `application.yml` 생성.
+* 프로젝트 내 `Reactive-Blog\src\main\resources` 경로에 `application.yml` 생성.
 
     * 밑의 양식대로 내용을 채운 뒤, `application.yml`에 삽입.
     <br>
@@ -62,17 +62,17 @@ Project - Reactive Blog
                 database: # 본인의 데이터베이스 이름을 기재하시면 됩니다.
     ```
 
-* IntelliJ IDEA(>= 2018.3)에서 해당 프로젝트를 `Open`
+* `IntelliJ IDEA`(>= 2018.3)에서 해당 프로젝트를 `Open`
 
     * 또는 터미널을 열어서 프로젝트 경로에 진입해서 다음 명령어를 실행.
 
-    * Windows 10
+    * `Windows 10`
 
         ```bash
         $ gradlew bootRun
         ```
 
-    * Ubuntu 18.04
+    * `Ubuntu 18.04`
 
         ```
         $ ./gradlew bootRun
@@ -82,7 +82,7 @@ Project - Reactive Blog
 
 ## 배포 서버
 
-* 추후 추가 예정
+* [https://donghun.dev:8084](https://donghun.dev:8084/api/articles)
 
 ## Dependencies
 <details><summary>세부정보</summary>
@@ -296,7 +296,7 @@ Project - Reactive Blog
 
     * `401 for Unauthorized requests`
 
-    * `403 for Forbidden requests`
+    * `400 for Bad requests`
 
     * `404 for Not found requests`
 

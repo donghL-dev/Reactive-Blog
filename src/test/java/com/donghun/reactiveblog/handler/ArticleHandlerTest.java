@@ -313,6 +313,135 @@ class ArticleHandlerTest extends BaseHandlerTest {
 
     }
 
+    @Test
+    @DisplayName("Article 을 생성한 뒤 생성한 Article 에 좋아요를 요청하는 API 테스트")
+    public void favoriteArticleRouteTest() {
+        User user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .username("test_user17")
+                .email("test_user17@email.com")
+                .password(passwordEncoder.encode("testPassword123445"))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Mono.just(user).flatMap(userRepository::save).subscribe();
+
+        String token = generateToken(user);
+        Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
+                .flatMap(tokenRepository::save).subscribe();
+
+        ArticlePostDTO articlePostDTO = ArticlePostDTO.builder()
+                .title("Article Create API Test7")
+                .description("Article Create API Test7")
+                .body("테스트 본문 입니다. 7")
+                .tagList(Collections.singleton("react JS"))
+                .build();
+
+        ArticlePostVO articlePostVO = new ArticlePostVO();
+        articlePostVO.setArticle(articlePostDTO);
+
+        webTestClient.post()
+                .uri("/api/articles")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .body(Mono.just(articlePostVO), ArticlePostVO.class)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isCreated();
+
+        webTestClient.post()
+                .uri("/api/articles/" + articlePostDTO.getTitle()
+                        .replace(" ", "-") + "/favorite")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isOk();
+
+        Mono<Article> articleMono = articleRepository.findBySlug(articlePostDTO.getTitle().replace(" ", "-"));
+
+        StepVerifier.create(articleMono)
+                .assertNext(article -> {
+                    then(article).isNotNull();
+                    then(article.getFavorites().contains(user.getEmail())).isEqualTo(true);
+                    then(article.getFavoritesCount()).isEqualTo(1);
+                }).verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Article 에 좋아요를 요청한 뒤 좋아요를 취소하는 API 테스트")
+    public void unfavoriteArticleRouteTest() {
+        User user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .username("test_user17")
+                .email("test_user17@email.com")
+                .password(passwordEncoder.encode("testPassword123445"))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Mono.just(user).flatMap(userRepository::save).subscribe();
+
+        String token = generateToken(user);
+        Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
+                .flatMap(tokenRepository::save).subscribe();
+
+        ArticlePostDTO articlePostDTO = ArticlePostDTO.builder()
+                .title("Article Create API Test7")
+                .description("Article Create API Test7")
+                .body("테스트 본문 입니다. 7")
+                .tagList(Collections.singleton("react JS"))
+                .build();
+
+        ArticlePostVO articlePostVO = new ArticlePostVO();
+        articlePostVO.setArticle(articlePostDTO);
+
+        webTestClient.post()
+                .uri("/api/articles")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .body(Mono.just(articlePostVO), ArticlePostVO.class)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isCreated();
+
+        webTestClient.post()
+                .uri("/api/articles/" + articlePostDTO.getTitle()
+                        .replace(" ", "-") + "/favorite")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isOk();
+
+        Mono<Article> articleMono1 = articleRepository.findBySlug(articlePostDTO.getTitle().replace(" ", "-"));
+
+        StepVerifier.create(articleMono1)
+                .assertNext(article -> {
+                    then(article).isNotNull();
+                    then(article.getFavorites().contains(user.getEmail())).isEqualTo(true);
+                    then(article.getFavoritesCount()).isEqualTo(1);
+                }).verifyComplete();
+
+        webTestClient.delete()
+                .uri("/api/articles/" + articlePostDTO.getTitle()
+                        .replace(" ", "-") + "/favorite")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectStatus()
+                .isOk();
+
+        Mono<Article> articleMono2 = articleRepository.findBySlug(articlePostDTO.getTitle().replace(" ", "-"));
+
+        StepVerifier.create(articleMono2)
+                .assertNext(article -> {
+                    then(article).isNotNull();
+                    then(article.getFavorites().contains(user.getEmail())).isEqualTo(false);
+                    then(article.getFavoritesCount()).isEqualTo(0);
+                }).verifyComplete();
+    }
 
 
 

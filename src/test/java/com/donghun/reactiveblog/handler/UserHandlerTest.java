@@ -79,14 +79,14 @@ public class UserHandlerTest extends BaseHandlerTest {
                     .id(UUID.randomUUID().toString())
                     .username("test_user22")
                     .email("test_user22@email.com")
-                    .password(passwordEncoder.encode("testPassword1234"))
+                    .password(passwordEncoder.encode("testPassword1234@#$%"))
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
 
         Mono.just(user).flatMap(userRepository::save).subscribe();
 
-        LoginDTO loginDTO = LoginDTO.builder().email("test_user22@email.com").password("testPassword1234").build();
+        LoginDTO loginDTO = LoginDTO.builder().email("test_user22@email.com").password("testPassword1234@#$%").build();
         LoginVO loginVO = new LoginVO();
         loginVO.setUser(loginDTO);
 

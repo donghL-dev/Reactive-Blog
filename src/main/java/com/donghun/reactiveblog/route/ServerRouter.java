@@ -1,9 +1,6 @@
 package com.donghun.reactiveblog.route;
 
-import com.donghun.reactiveblog.handler.ArticleHandler;
-import com.donghun.reactiveblog.handler.CommentHandler;
-import com.donghun.reactiveblog.handler.ProfileHandler;
-import com.donghun.reactiveblog.handler.UserHandler;
+import com.donghun.reactiveblog.handler.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -43,14 +40,16 @@ public class ServerRouter {
     }
 
     @Bean
-    public RouterFunction<ServerResponse> articleRoutes(ArticleHandler articleHandler, CommentHandler commentHandler) {
+    public RouterFunction<ServerResponse> articleRoutes(ArticleHandler articleHandler) {
         return RouterFunctions.nest(path("/api/articles"),
                 route(GET("/"), articleHandler::getArticles)
                 .andRoute(GET("/feed"), articleHandler::getFeedArticles)
                 .andRoute(GET("/{slug}"), articleHandler::getArticle)
                 .andRoute(POST("/").and(contentType(MediaType.APPLICATION_JSON)), articleHandler::postArticle)
                 .andRoute(PUT("/{slug}").and(contentType(MediaType.APPLICATION_JSON)), articleHandler::putArticle)
-                .andRoute(DELETE("/{slug}"), articleHandler::deleteArticle));
+                .andRoute(DELETE("/{slug}"), articleHandler::deleteArticle)
+                .andRoute(POST("/{slug}/favorite"), articleHandler::favoriteArticle)
+                .andRoute(DELETE("/{slug}/favorite"), articleHandler::unFavoriteArticle));
     }
 
     @Bean
@@ -59,5 +58,10 @@ public class ServerRouter {
                 route(POST("/").and(contentType(MediaType.APPLICATION_JSON)), commentHandler::postComment)
                 .andRoute(GET("/"), commentHandler::getComments)
                 .andRoute(DELETE("/{id}"), commentHandler::deleteComment));
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> tagRoutes(TagHandler tagHandler) {
+        return RouterFunctions.route(GET("/api/tags"), tagHandler::getTags);
     }
 }

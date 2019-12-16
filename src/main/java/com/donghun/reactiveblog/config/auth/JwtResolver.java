@@ -32,4 +32,14 @@ public class JwtResolver {
 
         return (String) parsedToken.getBody().get("email");
     }
+
+    public String getUserNameByToken(ServerRequest request) {
+        List<String> token = request.headers().header("Authorization");
+
+        Jws<Claims> parsedToken = Jwts.parser()
+                .setSigningKey(secret.getBytes())
+                .parseClaimsJws(token.get(0));
+
+        return (String) parsedToken.getBody().get("userName");
+    }
 }

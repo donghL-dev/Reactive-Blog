@@ -59,21 +59,12 @@ public class UserService {
                 .flatMap(user -> {
                     if(validator.validate(user).isEmpty()) {
                         return userRepository.findByUsername(user.getUsername())
-                                .flatMap(u -> ServerResponse.badRequest().body(Mono.just(
+                                .flatMap(existUser -> ServerResponse.badRequest().body(Mono.just(
                                         new ErrorStatusVO(Collections.singletonList("Username already exist")).getErrors()), Map.class))
                                 .switchIfEmpty(userRepository.findByEmail(user.getEmail())
                                         .flatMap(dbUser -> ServerResponse.badRequest().body(Mono.just(
                                                 new ErrorStatusVO(Collections.singletonList("Email already exist")).getErrors()), Map.class))
-                                        .switchIfEmpty(userRepository.save(User.builder()
-                                                .id(UUID.randomUUID().toString())
-                                                .username(user.getUsername())
-                                                .email(user.getEmail())
-                                                .password(passwordEncoder.encode(user.getPassword()))
-                                                .bio("")
-                                                .image("")
-                                                .token("")
-                                                .createdAt(LocalDateTime.now())
-                                                .updatedAt(LocalDateTime.now()).build())
+                                        .switchIfEmpty(userRepository.save(new User().createUser(user, passwordEncoder))
                                                 .flatMap(savedUser -> ServerResponse.created(URI.create("/aoi/users"))
                                                         .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new UserVO(savedUser)), UserVO.class))));
 
@@ -86,19 +77,26 @@ public class UserService {
 
 
     public Mono<ServerResponse> loginProcessLogic(ServerRequest request) {
-        return request.bodyToMono(LoginVO.class)
-                .flatMap(loginVO -> userRepository.findByEmail(loginVO.getUser().getEmail())
-                        .flatMap(user -> {
-                            if(passwordEncoder.matches(loginVO.getUser().getPassword(), user.getPassword())) {
-                                generateToken(user);
-                                return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                                        .body(Mono.just(new UserVO(user)), UserVO.class);
-                            } else {
-                                return ServerResponse.badRequest().body(
-                                        Mono.just(new ErrorStatusVO(Collections.singletonList("Invalid credentials")).getErrors()), Map.class);
-                            }
-                        }).switchIfEmpty(ServerResponse.badRequest().body(
-                                Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class)));
+        return request.bodyToMono(LoginVO.class).map(LoginVO::getUser)
+                .flatMap(loginDTO ->  {
+                    if(validator.validate(loginDTO).isEmpty()) {
+                        return userRepository.findByEmail(loginDTO.getEmail())
+                                .flatMap(user -> {
+                                    if(passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+                                        generateToken(user);
+                                        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                                .body(Mono.just(new UserVO(user)), UserVO.class);
+                                    } else {
+                                        return ServerResponse.badRequest().body(
+                                                Mono.just(new ErrorStatusVO(Collections.singletonList("Invalid credentials")).getErrors()), Map.class);
+                                    }
+                                }).switchIfEmpty(ServerResponse.badRequest().body(
+                                        Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class));
+                    } else {
+                        return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                                Mono.just(new ErrorStatusVO(validation(loginDTO)).getErrors()), Map.class);
+                    }
+                });
     }
 
     public Mono<ServerResponse> logoutProcessLogic(ServerRequest request) {
@@ -121,17 +119,7 @@ public class UserService {
                 .flatMap(userDTO -> {
                     if (validator.validate(userDTO).isEmpty()) {
                         return userRepository.findByEmail(jwtResolver.getUserByToken(request))
-                                .flatMap(user -> userRepository.save(User.builder()
-                                    .id(userDTO.getId() == null ? user.getId() : userDTO.getId())
-                                    .username(userDTO.getUsername() == null ? user.getUsername() : userDTO.getUsername())
-                                    .email(userDTO.getEmail() == null ? user.getEmail() : userDTO.getEmail())
-                                    .bio(userDTO.getBio() == null ? user.getBio() : userDTO.getBio())
-                                    .image(userDTO.getImage() == null ? user.getImage() : userDTO.getImage())
-                                    .updatedAt(LocalDateTime.now())
-                                    .createdAt(user.getCreatedAt())
-                                    .password(user.getPassword())
-                                    .token(user.getToken())
-                                    .build())
+                                .flatMap(user -> userRepository.save(user.updateUser(userDTO))
                                 .flatMap(savedUser -> ServerResponse.ok()
                                         .contentType(MediaType.APPLICATION_JSON).body(Mono.just(new UserVO(savedUser)), UserVO.class)))
                                 .switchIfEmpty(ServerResponse.badRequest().body(
@@ -142,7 +130,7 @@ public class UserService {
                 });
     }
 
-    public void generateToken(User user) {
+    private void generateToken(User user) {
 
         List<String> roles = Stream.of(new SimpleGrantedAuthority("USER")).map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
@@ -166,12 +154,11 @@ public class UserService {
         user.setToken(token);
 
         Mono.just(user).flatMap(userRepository::save).subscribe();
-
         Mono.just(Token.builder().id(UUID.randomUUID().toString()).email(user.getEmail()).token(token).build())
                 .flatMap(tokenRepository::save).subscribe();
     }
 
-    public<T> List<String> validation(T object) {
+    private <T> List<String> validation(T object) {
         Set<ConstraintViolation<T>> constraintViolations = validator.validate(object);
         return constraintViolations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
     }

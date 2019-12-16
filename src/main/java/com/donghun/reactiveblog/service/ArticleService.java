@@ -18,8 +18,6 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
-import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -127,18 +125,7 @@ public class ArticleService {
                 .flatMap(articlePostDTO -> {
                     if(validator.validate(articlePostDTO).isEmpty()) {
                         return userRepository.findByEmail(jwtResolver.getUserByToken(request))
-                                .flatMap(user ->  articleRepository.save(Article.builder()
-                                        .id(UUID.randomUUID().toString())
-                                        .slug(articlePostDTO.getTitle().replace(" ", "-"))
-                                        .title(articlePostDTO.getTitle())
-                                        .description(articlePostDTO.getDescription())
-                                        .body(articlePostDTO.getBody())
-                                        .createdAt(LocalDateTime.now())
-                                        .updatedAt(LocalDateTime.now())
-                                        .favorites(Collections.emptySet())
-                                        .author(new ProfileBodyVO(user, false))
-                                        .favoritesCount(0)
-                                        .tags(articlePostDTO.getTagList()).build())
+                                .flatMap(user ->  articleRepository.save(new Article().createArticle(articlePostDTO, user))
                                         .flatMap(article -> {
                                             articlePostDTO.getTagList().forEach(s -> tagRepository.findByName(s).switchIfEmpty(
                                                     tagRepository.save(Tag.builder().id(UUID.randomUUID().toString()).name(s).build())).subscribe());
@@ -160,25 +147,18 @@ public class ArticleService {
                     if(validator.validate(articlePutDTO).isEmpty()) {
                         return userRepository.findByEmail(jwtResolver.getUserByToken(request))
                                 .flatMap(user -> articleRepository.findBySlug(request.pathVariable("slug"))
-                                        .flatMap(article -> articleRepository.save(Article.builder()
-                                                .id(article.getId())
-                                                .slug(articlePutDTO.getTitle() == null
-                                                        ? article.getSlug() : articlePutDTO.getTitle().replace(" ", "-"))
-                                                .title(articlePutDTO.getTitle() == null ? article.getTitle() : articlePutDTO.getTitle())
-                                                .body(articlePutDTO.getBody() == null ? article.getBody() : articlePutDTO.getBody())
-                                                .tags(articlePutDTO.getTagList() == null ? article.getTags() : articlePutDTO.getTagList())
-                                                .favoritesCount(article.getFavoritesCount())
-                                                .author(article.getAuthor())
-                                                .favorites(article.getFavorites())
-                                                .description(articlePutDTO.getDescription() == null
-                                                        ? article.getDescription() : articlePutDTO.getDescription())
-                                                .updatedAt(LocalDateTime.now())
-                                                .createdAt(article.getCreatedAt())
-                                                .build())
-                                                .flatMap(article1 ->
-                                                        ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                                                            .body(Mono.just(new SingleArticleVO(new ArticleVO(article1,
-                                                                    jwtResolver.getUserByToken(request)))), SingleArticleVO.class)))
+                                        .flatMap(article -> {
+                                            if (article.getAuthor().getEmail().equals(user.getEmail())) {
+                                                return articleRepository.save(article.updateArticle(articlePutDTO))
+                                                        .flatMap(article1 -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(
+                                                                Mono.just(new SingleArticleVO(new ArticleVO(article1,
+                                                                                jwtResolver.getUserByToken(request)))), SingleArticleVO.class));
+                                            } else {
+                                                return ServerResponse.status(401).contentType(MediaType.APPLICATION_JSON).body(
+                                                        Mono.just(new ErrorStatusVO(Collections.singletonList("You didn't write this article, " +
+                                                                "only the author can modify the article.")).getErrors()), Map.class);
+                                            }
+                                        })
                                         .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                                                 Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class))
                                 .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
@@ -206,6 +186,66 @@ public class ArticleService {
                         Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class));
     }
 
+    public Mono<ServerResponse> favoriteArticle(ServerRequest request) {
+        return articleRepository.findBySlug(request.pathVariable("slug"))
+                .flatMap(article -> {
+                    if (article.getFavorites().contains(jwtResolver.getUserByToken(request))) {
+                        return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
+                                .body(Mono.just(new ErrorStatusVO(Collections
+                                        .singletonList("You have already clicked Favorite on this Article.")).getErrors()), Map.class);
+                    } else {
+                        return articleRepository.save(article.favoriteArticle(jwtResolver, request))
+                                .flatMap(article1 -> {
+                                    Mono<Follow> followMono = followRepository.findByFollowAndFollowing(article1.getAuthor().getEmail(), jwtResolver.getUserByToken(request))
+                                            .switchIfEmpty(Mono.just(Follow.builder().follow("Invalid Value").build()));
+
+                                    return followMono.flatMap(follow -> {
+                                        if(follow.getFollow().equals("Invalid Value")) {
+                                            article1.getAuthor().setFallowing(false);
+                                        } else {
+                                            article1.getAuthor().setFallowing(true);
+                                        }
+                                        return Mono.just(article1);
+                                    });
+                                }).flatMap(article2 -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                        .body(Mono.just(new SingleArticleVO(new ArticleVO(article2,
+                                                jwtResolver.getUserByToken(request)))), SingleArticleVO.class));
+                    }
+                })
+                .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                        Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class));
+    }
+
+    public Mono<ServerResponse> unFavoriteArticle(ServerRequest request) {
+        return articleRepository.findBySlug(request.pathVariable("slug"))
+                .flatMap(article -> {
+                    if (!article.getFavorites().contains(jwtResolver.getUserByToken(request))) {
+                        return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON)
+                                .body(Mono.just(new ErrorStatusVO(Collections
+                                        .singletonList("You have not clicked Favorite on this Article.")).getErrors()), Map.class);
+                    } else {
+                        return articleRepository.save(article.unFavoriteArticle(jwtResolver, request))
+                                .flatMap(article1 -> {
+                                    Mono<Follow> followMono = followRepository.findByFollowAndFollowing(article1.getAuthor().getEmail(), jwtResolver.getUserByToken(request))
+                                            .switchIfEmpty(Mono.just(Follow.builder().follow("Invalid Value").build()));
+
+                                    return followMono.flatMap(follow -> {
+                                        if(follow.getFollow().equals("Invalid Value")) {
+                                            article1.getAuthor().setFallowing(false);
+                                        } else {
+                                            article1.getAuthor().setFallowing(true);
+                                        }
+                                        return Mono.just(article1);
+                                    });
+                                }).flatMap(article2 -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                        .body(Mono.just(new SingleArticleVO(new ArticleVO(article2,
+                                                jwtResolver.getUserByToken(request)))), SingleArticleVO.class));
+                    }
+                })
+                .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                        Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class));
+    }
+
     private List<Article> listGenerate(List<Article> articles, ServerRequest request) {
         return articles.stream()
                 .filter(article -> !request.queryParam("tag").isPresent() ||
@@ -220,7 +260,7 @@ public class ArticleService {
                 .collect(Collectors.toList());
     }
 
-    public<T> List<String> validation(T object) {
+    private <T> List<String> validation(T object) {
         Set<ConstraintViolation<T>> constraintViolations = validator.validate(object);
         return constraintViolations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
     }
