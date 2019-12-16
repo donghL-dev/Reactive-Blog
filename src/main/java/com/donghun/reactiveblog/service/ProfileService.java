@@ -61,8 +61,6 @@ public class ProfileService {
                         .body(Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class));
     }
 
-
-
     public Mono<ServerResponse> unFollowUserProcessLogic(ServerRequest request) {
         return userRepository.findByUsername(request.pathVariable("username"))
                 .flatMap(user -> {

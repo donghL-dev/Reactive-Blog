@@ -7,6 +7,10 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.util.Map;
 
+/**
+ * @author donghL-dev
+ * @since  2019-12-09
+ */
 @Component
 public class GlobalErrorAttributes extends DefaultErrorAttributes {
     @Override

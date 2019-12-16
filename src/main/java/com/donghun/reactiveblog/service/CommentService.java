@@ -15,10 +15,11 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author donghL-dev
@@ -36,26 +37,28 @@ public class CommentService {
 
     private final FollowRepository followRepository;
 
+    private final Validator validator;
+
     private final JwtResolver jwtResolver;
 
     public Mono<ServerResponse> postCommentProcessLogic(ServerRequest request) {
         return request.bodyToMono(CommentPostVO.class).map(CommentPostVO::getComment)
-                .flatMap(commentDTO -> userRepository.findByEmail(jwtResolver.getUserByToken(request))
-                        .flatMap(user -> articleRepository.findBySlug(request.pathVariable("slug"))
-                                .flatMap(article -> commentRepository.save(Comment.builder()
-                                        .id(UUID.randomUUID().toString())
-                                        .body(commentDTO.getBody())
-                                        .author(new ProfileBodyVO(user, false))
-                                        .slug(article.getSlug())
-                                        .createdAt(LocalDateTime.now())
-                                        .updatedAt(LocalDateTime.now())
-                                        .build()))
-                                        .flatMap(comment -> ServerResponse.created(request.uri()).contentType(MediaType.APPLICATION_JSON)
-                                                .body(Mono.just(new CommentVO(comment)), CommentVO.class))
+                .flatMap(commentDTO -> {
+                    if(validator.validate(commentDTO).isEmpty()) {
+                        return userRepository.findByEmail(jwtResolver.getUserByToken(request))
+                                .flatMap(user -> articleRepository.findBySlug(request.pathVariable("slug"))
+                                        .flatMap(article -> commentRepository.save(new Comment().createComment(commentDTO, user, article)))
+                                            .flatMap(comment -> ServerResponse.created(request.uri()).contentType(MediaType.APPLICATION_JSON)
+                                                    .body(Mono.just(new CommentVO(comment)), CommentVO.class))
+                                        .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                                                Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class)))
                                 .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
-                                        Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class)))
-                        .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
-                                Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class)));
+                                        Mono.just(new ErrorStatusVO(Collections.singletonList("User does not exist")).getErrors()), Map.class));
+                    } else {
+                        return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                                Mono.just(new ErrorStatusVO(validation(commentDTO)).getErrors()), Map.class);
+                    }
+                });
     }
 
     public Mono<ServerResponse> getCommentsProcessLogic(ServerRequest request) {
@@ -91,13 +94,18 @@ public class CommentService {
                                                 new StatusVO())), SuccessVO.class));
                             } else {
                                 return ServerResponse.status(401).contentType(MediaType.APPLICATION_JSON).body(
-                                        Mono.just(new ErrorStatusVO(Collections.singletonList("You didn't write this article, " +
-                                                "only the author can delete the article.")).getErrors()), Map.class);
+                                        Mono.just(new ErrorStatusVO(Collections.singletonList("You didn't write this comment, " +
+                                                "only the author can delete the comment.")).getErrors()), Map.class);
                             }
                         })
                         .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                                 Mono.just(new ErrorStatusVO(Collections.singletonList("Comment does not exist")).getErrors()), Map.class)))
                 .switchIfEmpty(ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                         Mono.just(new ErrorStatusVO(Collections.singletonList("Article does not exist")).getErrors()), Map.class));
+    }
+
+    private <T> List<String> validation(T object) {
+        Set<ConstraintViolation<T>> constraintViolations = validator.validate(object);
+        return constraintViolations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
     }
 }

@@ -50,4 +50,14 @@ public class ArticleHandler {
         logger.info(("Delete Article Handler Accessed"));
         return articleService.deleteArticleProcessLogic(request);
     }
+
+    public Mono<ServerResponse> favoriteArticle(ServerRequest request) {
+        logger.info("Favorite Article Handler Accessed");
+        return articleService.favoriteArticle(request);
+    }
+
+    public Mono<ServerResponse> unFavoriteArticle(ServerRequest request) {
+        logger.info("Un Favorite Article Handler Accessed");
+        return articleService.unFavoriteArticle(request);
+    }
 }

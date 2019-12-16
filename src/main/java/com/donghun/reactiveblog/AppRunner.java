@@ -48,13 +48,12 @@ public class AppRunner implements CommandLineRunner {
                 Flux.fromStream(IntStream.rangeClosed(1, 30).mapToObj(this::createArticle))
                         .flatMap(articleRepository::save)).subscribe();
 
-
         tokenRepository.deleteAll().subscribe();
         followRepository.deleteAll().subscribe();
         commentRepository.deleteAll().subscribe();
     }
 
-    public User createUser(int index) {
+    private User createUser(int index) {
         return User.builder()
                 .id(UUID.randomUUID().toString())
                 .username("user" + index)
@@ -67,7 +66,7 @@ public class AppRunner implements CommandLineRunner {
                 .build();
     }
 
-    public Article createArticle(int index) {
+    private Article createArticle(int index) {
         Random random = new Random();
         int rndNumber = random.nextInt(10) + 1;
         return Article.builder()
