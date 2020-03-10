@@ -82,7 +82,7 @@ Project - Reactive Blog
 
 ## 배포 서버
 
-* [https://deploy.donghun.dev::8084](https://deploy.donghun.dev::8084/api/articles)
+* [https://deploy.donghun.dev::8084](https://deploy.donghun.dev:8084/api/articles)
 
 ## Dependencies
 <details><summary>세부정보</summary>
